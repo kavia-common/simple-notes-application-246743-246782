@@ -3,6 +3,7 @@ const express = require('express');
 const routes = require('./routes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../swagger');
+const { HttpError } = require('./utils/http');
 
 // Initialize express app
 const app = express();
@@ -46,11 +47,23 @@ app.use('/', routes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: 'Internal Server Error',
-  });
+  // eslint-disable-next-line no-console
+  console.error(err);
+
+  // Body parser invalid JSON => SyntaxError with status 400
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON body.' });
+  }
+
+  // Expected/validated errors
+  if (err instanceof HttpError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+      ...(err.details !== undefined ? { details: err.details } : {}),
+    });
+  }
+
+  return res.status(500).json({ error: 'Internal Server Error' });
 });
 
 module.exports = app;

@@ -15,6 +15,11 @@ function resolveDbPath() {
   const fromEnv = process.env.NOTES_DB_PATH;
   if (fromEnv && String(fromEnv).trim()) return String(fromEnv).trim();
 
+  // Database container tooling writes db_visualizer/sqlite.env exporting SQLITE_DB.
+  // Accept it here so backend and DB container can share the same configuration knob.
+  const fromSqliteDbEnv = process.env.SQLITE_DB;
+  if (fromSqliteDbEnv && String(fromSqliteDbEnv).trim()) return String(fromSqliteDbEnv).trim();
+
   // Monorepo default path (local dev / CI). This matches database/db_connection.txt.
   return path.resolve(__dirname, '../../../..', 'simple-notes-application-246743-246783', 'database', 'myapp.db');
 }
